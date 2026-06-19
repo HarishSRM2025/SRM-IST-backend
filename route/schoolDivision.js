@@ -5,6 +5,7 @@ const { createSchoolDivision, getAllSchoolDivision, getSchoolDivisionById, updat
 const { addHODMessage, getHODMessage, getHODMessageById, updateHODMessage, deleteHODMessage } = require("../controller/schoolDivision/hodMessage");
 const { createAchievement, getAllAchievements, getAchievementById, updateAchievement, deleteAchievement } = require("../controller/schoolDivision/achievements");
 const { createEventsAndActivities, getAllEventsAndActivities, getEventsAndActivitiesById, updateEventsAndActivitiesById, deleteEventsAndActivitiesById } = require("../controller/schoolDivision/eventsAndActivities");
+const { createProgramme, getAllProgrammes, getProgrammeById, updateProgramme, deleteProgramme } = require("../controller/schoolDivision/programmes");
 
 // School Division routes
 router.post('/add', createSchoolDivision);
@@ -19,6 +20,13 @@ router.get('/hod-message/getall', getHODMessage);
 router.get('/hod-message/getone/:id', getHODMessageById);
 router.put('/hod-message/update/:id', upload.single("hodImage"), updateHODMessage);
 router.delete('/hod-message/delete/:id', deleteHODMessage);
+
+//Programes routes
+router.post('/programmes/create', createProgramme);
+router.get('/programmes/getall', getAllProgrammes);
+router.get('/programmes/getone/:id', getProgrammeById);
+router.put('/programmes/update/:id', updateProgramme);
+router.delete('/programmes/delete/:id', deleteProgramme);
 
 // Achievements routes
 router.post('/achievements/create', upload.single("achievementImage"), createAchievement);
