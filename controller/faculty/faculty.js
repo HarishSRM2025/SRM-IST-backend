@@ -2,7 +2,7 @@ const Faculty = require("../../models/faculty/faculty");
 
 exports.addFaculty = async (req, res) => {
     try {
-        const { facultyName, facultyEmail, facultyGender, school, subjects, designation, facultyExperience, areaOfInterest, educationDetails } = req.body;
+        const { facultyName, facultyEmail, facultyGender, school, schoolDivision, subjects, designation, facultyExperience, areaOfInterest, educationDetails } = req.body;
         if (!facultyName || !facultyEmail || !facultyGender || !school || !subjects || !designation || !facultyExperience || !areaOfInterest || !educationDetails) {
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -29,6 +29,7 @@ exports.addFaculty = async (req, res) => {
             facultyImage,
             facultyGender,
             school,
+            schoolDivision: schoolDivision || undefined,
             subjects: parsedSubjects,
             educationDetails: parsedEducationDetails,
             designation,

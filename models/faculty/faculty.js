@@ -5,6 +5,7 @@ const facultySchema = new mongoose.Schema({
     facultyImage: String,
     facultyGender: String,
     school: { type: mongoose.Schema.Types.ObjectId, ref: "School" },
+    schoolDivision: { type: mongoose.Schema.Types.ObjectId, ref: "SchoolDivision" },
     subjects: [{
         subject: String
     }],
