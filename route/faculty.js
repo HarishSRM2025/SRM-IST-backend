@@ -5,13 +5,13 @@ const Faculty = require("../controller/faculty/faculty");
 const FacultyResearch = require("../controller/faculty/facultyResearch");
 const FacultyExperience = require("../controller/faculty/facultyExperience");
 
-
-// Faculty Pesonal Detail
-router.post("/addfaculty",upload.single("facultyImage"), Faculty.addFaculty);
+// Faculty Personal Detail
+router.post("/addfaculty", upload.single("facultyImage"), Faculty.addFaculty);
 router.get("/getfaculty", Faculty.getFaculty);
 router.get("/getfacultybyschool/:school", Faculty.getFacultyBySchool);
+router.get("/getfacultybyinstitution/:institution", Faculty.getFacultyByInstitution);
 router.get("/getfacultybyid/:id", Faculty.getFacultyById);
-router.put("/updatefaculty/:id",upload.single("facultyImage"), Faculty.updateFaculty);
+router.put("/updatefaculty/:id", upload.single("facultyImage"), Faculty.updateFaculty);
 router.delete("/deletefaculty/:id", Faculty.deleteFaculty);
 
 // Faculty Achievements

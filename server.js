@@ -11,6 +11,7 @@ const researchCenterRoutes = require('./route/research')
 const schoolDivisionRoutes = require('./route/schoolDivision')
 const sliderRoutes = require('./route/slider')
 const aboutRoutes = require('./route/about_route')
+const studentRoutes = require('./route/students')
 
 // Package Imports
 const app = express()
@@ -33,7 +34,7 @@ app.use('/api/research', researchCenterRoutes)
 app.use('/api/school-division', schoolDivisionRoutes)
 app.use('/api/slider', sliderRoutes)
 app.use('/api/about', aboutRoutes)
-
+app.use('/api/student', studentRoutes)
 
 // Global Error Handler (e.g., for Multer file type or size limits)
 app.use((err, req, res, next) => {

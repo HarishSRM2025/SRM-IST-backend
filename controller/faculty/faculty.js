@@ -2,8 +2,8 @@ const Faculty = require("../../models/faculty/faculty");
 
 exports.addFaculty = async (req, res) => {
     try {
-        const { facultyName, facultyEmail, facultyGender, school, schoolDivision, subjects, designation, facultyExperience, areaOfInterest, educationDetails } = req.body;
-        if (!facultyName || !facultyEmail || !facultyGender || !school || !subjects || !designation || !facultyExperience || !areaOfInterest || !educationDetails) {
+        const { facultyName, facultyEmail, facultyGender, institution, school, schoolDivision, subjects, designation, facultyExperience, areaOfInterest, educationDetails } = req.body;
+        if (!facultyName || !facultyEmail || !facultyGender || (!school && !institution) || !subjects || !designation || !facultyExperience || !areaOfInterest || !educationDetails) {
             return res.status(400).json({ message: "All fields are required" });
         }
         if (await Faculty.findOne({ facultyEmail })) {
@@ -23,13 +23,15 @@ exports.addFaculty = async (req, res) => {
         if (typeof educationDetails === 'string') {
             try { parsedEducationDetails = JSON.parse(educationDetails); } catch (e) { parsedEducationDetails = []; }
         }
+        const hasInstitution = institution && institution !== "null" && institution !== "";
         const faculty = new Faculty({
             facultyName,
             facultyEmail,
             facultyImage,
             facultyGender,
-            school,
-            schoolDivision: schoolDivision || undefined,
+            institution: hasInstitution ? institution : undefined,
+            school: !hasInstitution && school ? school : undefined,
+            schoolDivision: !hasInstitution && schoolDivision ? schoolDivision : undefined,
             subjects: parsedSubjects,
             educationDetails: parsedEducationDetails,
             designation,
@@ -80,6 +82,19 @@ exports.updateFaculty = async (req, res) => {
         if (typeof updateData.educationDetails === 'string') {
             try { updateData.educationDetails = JSON.parse(updateData.educationDetails); } catch (e) { /* keep as-is */ }
         }
+        const hasInstitution = updateData.institution && updateData.institution !== "null" && updateData.institution !== "";
+        if (hasInstitution) {
+            updateData.school = null;
+            updateData.schoolDivision = null;
+        } else {
+            updateData.institution = null;
+            if (updateData.school === "" || updateData.school === "null") {
+                updateData.school = null;
+            }
+            if (updateData.schoolDivision === "" || updateData.schoolDivision === "null") {
+                updateData.schoolDivision = null;
+            }
+        }
         const faculty = await Faculty.findByIdAndUpdate(req.params.id, updateData, { new: true });
         res.status(200).json(faculty);
     } catch (err) {
@@ -89,6 +104,14 @@ exports.updateFaculty = async (req, res) => {
 exports.deleteFaculty = async (req, res) => {
     try {
         const faculty = await Faculty.findByIdAndDelete(req.params.id);
+        res.status(200).json(faculty);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+exports.getFacultyByInstitution = async (req, res) => {
+    try {
+        const faculty = await Faculty.find({ institution: req.params.institution });
         res.status(200).json(faculty);
     } catch (err) {
         res.status(500).json({ message: err.message });
