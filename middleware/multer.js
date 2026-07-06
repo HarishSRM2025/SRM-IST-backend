@@ -14,12 +14,12 @@ const upload = multer({
     storage: storage,
     limits: { fileSize: 10485760 }, // 10MB limit
     fileFilter: (req, file, cb) => {
-        const allowedTypes = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf'];
+        const allowedTypes = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf', '.doc', '.docx'];
         const ext = path.extname(file.originalname).toLowerCase();
         if (allowedTypes.includes(ext)) {
             cb(null, true);
         } else {
-            cb(new Error('Invalid file type. Only images (.png, .jpg, .jpeg, .gif, .webp) and documents (.pdf) are allowed.'));
+            cb(new Error('Invalid file type. Only images (.png, .jpg, .jpeg, .gif, .webp) and documents (.pdf, .doc, .docx) are allowed.'));
         }
     }
 });

@@ -13,6 +13,7 @@ const sliderRoutes = require('./route/slider')
 const aboutRoutes = require('./route/about_route')
 const studentRoutes = require('./route/students')
 const authRoutes = require('./route/auth')
+const careersRoutes = require('./route/careers')
 
 // Package Imports
 const app = express()
@@ -37,6 +38,7 @@ app.use('/api/slider', sliderRoutes)
 app.use('/api/about', aboutRoutes)
 app.use('/api/student', studentRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api/careers', careersRoutes)
 
 // Global Error Handler (e.g., for Multer file type or size limits)
 app.use((err, req, res, next) => {
