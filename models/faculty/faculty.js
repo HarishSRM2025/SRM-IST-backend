@@ -4,6 +4,7 @@ const facultySchema = new mongoose.Schema({
     facultyEmail: String,
     facultyImage: String,
     facultyGender: String,
+    institution: { type: mongoose.Schema.Types.ObjectId, ref: "Institution" },
     school: { type: mongoose.Schema.Types.ObjectId, ref: "School" },
     schoolDivision: { type: mongoose.Schema.Types.ObjectId, ref: "SchoolDivision" },
     subjects: [{
@@ -16,6 +17,7 @@ const facultySchema = new mongoose.Schema({
         year: String
     }],
     designation: String,
+    facultyResearch: Number,
     facultyExperience: Number,
     areaOfInterest: String
 }, { timestamps: true });

@@ -4,8 +4,8 @@ const Faculty = require("../../models/faculty/faculty");
 
 exports.addFaculty = async (req, res) => {
     try {
-        const { facultyName, facultyEmail, facultyGender, school, schoolDivision, subjects, designation, facultyExperience, areaOfInterest, educationDetails } = req.body;
-        if (!facultyName || !facultyEmail || !facultyGender || !school || !subjects || !designation || !facultyExperience || !areaOfInterest || !educationDetails) {
+        const { facultyName, facultyEmail, facultyGender, institution, school, schoolDivision, subjects, designation, facultyExperience, areaOfInterest, educationDetails } = req.body;
+        if (!facultyName || !facultyEmail || !facultyGender || (!school && !institution) || !subjects || !designation || !facultyExperience || !areaOfInterest || !educationDetails) {
             return res.status(400).json({ message: "All fields are required" });
         }
         if (await Faculty.findOne({ facultyEmail })) {
@@ -25,13 +25,15 @@ exports.addFaculty = async (req, res) => {
         if (typeof educationDetails === 'string') {
             try { parsedEducationDetails = JSON.parse(educationDetails); } catch (e) { parsedEducationDetails = []; }
         }
+        const hasInstitution = institution && institution !== "null" && institution !== "";
         const faculty = new Faculty({
             facultyName,
             facultyEmail,
             facultyImage,
             facultyGender,
-            school,
-            schoolDivision: schoolDivision || undefined,
+            institution: hasInstitution ? institution : undefined,
+            school: !hasInstitution && school ? school : undefined,
+            schoolDivision: !hasInstitution && schoolDivision ? schoolDivision : undefined,
             subjects: parsedSubjects,
             educationDetails: parsedEducationDetails,
             designation,
