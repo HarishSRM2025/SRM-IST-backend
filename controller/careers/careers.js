@@ -1,0 +1,1 @@
+const careers = require('../../models/careers/careers');

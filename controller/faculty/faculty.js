@@ -62,6 +62,14 @@ exports.getFacultyBySchool = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 }
+exports.getFacultyByInstitution = async (req, res) => {
+    try {
+        const faculty = await Faculty.find({ institution: req.params.institution });
+        res.status(200).json(faculty);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
 exports.getFacultyById = async (req, res) => {
     try {
         const faculty = await Faculty.findById(req.params.id);
