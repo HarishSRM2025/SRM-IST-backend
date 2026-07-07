@@ -88,6 +88,20 @@ exports.updateFaculty = async (req, res) => {
 
         const updateData = { ...req.body };
 
+        // Sanitize ObjectId fields to prevent casting errors
+        if ('institution' in updateData || 'school' in updateData || 'schoolDivision' in updateData) {
+            const hasInstitution = updateData.institution && updateData.institution !== "null" && updateData.institution !== "";
+            if (hasInstitution) {
+                updateData.institution = updateData.institution;
+                updateData.school = null;
+                updateData.schoolDivision = null;
+            } else {
+                updateData.institution = null;
+                updateData.school = updateData.school && updateData.school !== "null" && updateData.school !== "" ? updateData.school : null;
+                updateData.schoolDivision = updateData.schoolDivision && updateData.schoolDivision !== "null" && updateData.schoolDivision !== "" ? updateData.schoolDivision : null;
+            }
+        }
+
         // If a new image is uploaded
         if (req.file) {
 
