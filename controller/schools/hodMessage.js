@@ -1,5 +1,6 @@
 const HODMessage = require("../../models/schools/hodMessage")
-
+const fs = require("fs");
+const path = require("path");
 exports.addHODMessage = async (req, res) => {
     try {
         const { school, hodName, hodDesignation, message } = req.body;
@@ -51,6 +52,17 @@ exports.getHODMessageById = async (req, res) => {
 exports.updateHODMessage = async (req, res) => {
     try {
         const { school, hodName, hodDesignation, message } = req.body;
+
+        // Find existing HOD message
+        const existingHODMessage = await HODMessage.findById(req.params.id);
+
+        if (!existingHODMessage) {
+            return res.status(404).json({
+                message: "HOD Message not found"
+            });
+        }
+
+
         const updateData = {
             school,
             hodName,
@@ -58,35 +70,106 @@ exports.updateHODMessage = async (req, res) => {
             message
         };
 
+
         if (req.file) {
-            updateData.hodImage = req.file.filename || req.file.path.split(/[/\\]/).pop();
+
+            // Delete old image
+            if (existingHODMessage.hodImage) {
+
+                const oldImagePath = path.join(
+                    process.cwd(),
+                    "public/uploads",
+                    existingHODMessage.hodImage
+                );
+
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
+            }
+
+
+            updateData.hodImage =
+                req.file.filename || req.file.path.split(/[/\\]/).pop();
+
+
         } else if (req.body.hodImage) {
-            updateData.hodImage = req.body.hodImage.split(/[/\\]/).pop();
+
+            updateData.hodImage =
+                req.body.hodImage.split(/[/\\]/).pop();
+
         }
 
-        const hodMessageEntry = await HODMessage.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
 
-        if (!hodMessageEntry) {
-            return res.status(404).json({ message: "HOD Message not found" });
-        }
+        const hodMessageEntry = await HODMessage.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
 
         res.status(200).json(hodMessageEntry);
-    } catch (error) {
-        console.error(error);
-        const statusCode = error.name === "ValidationError" ? 400 : 500;
-        res.status(statusCode).json({ message: error.message || "Error updating HOD Message" });
-    }
-}
 
+
+    } catch (error) {
+
+        console.error(error);
+
+        const statusCode =
+            error.name === "ValidationError" ? 400 : 500;
+
+        res.status(statusCode).json({
+            message: error.message || "Error updating HOD Message"
+        });
+    }
+};
 exports.deleteHODMessage = async (req, res) => {
     try {
-        const hodMessage = await HODMessage.findByIdAndDelete(req.params.id)
+
+        // Find HOD message first
+        const hodMessage = await HODMessage.findById(req.params.id);
+
+
         if (!hodMessage) {
-            return res.status(404).json({ message: "HOD Message not found" })
+            return res.status(404).json({
+                message: "HOD Message not found"
+            });
         }
-        res.status(200).json({ message: "HOD Message deleted successfully" })
+
+
+        // Delete image from public/uploads
+        if (hodMessage.hodImage) {
+
+            const imagePath = path.join(
+                process.cwd(),
+                "public/uploads",
+                hodMessage.hodImage
+            );
+
+
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+            }
+        }
+
+
+        // Delete database record
+        await HODMessage.findByIdAndDelete(req.params.id);
+
+
+        res.status(200).json({
+            message: "HOD Message deleted successfully"
+        });
+
+
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ message: "Error deleting HOD Message" })
+
+        console.log(error);
+
+        res.status(500).json({
+            message: "Error deleting HOD Message"
+        });
     }
-}
+};

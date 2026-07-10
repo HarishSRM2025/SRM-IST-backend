@@ -1,5 +1,6 @@
 const Slider = require("../../models/slider/slider");
-
+const fs = require("fs");
+const path = require("path");
 // Create a new slider
 exports.createSlider = async (req, res) => {
     try {
@@ -38,32 +39,137 @@ exports.getSliderById = async (req, res) => {
     }
 };
 
-exports.updateSlider = async (req, res) => {    
+exports.updateSlider = async (req, res) => {
     try {
-        const { tagLine, title, description, ctaText1, ctaLink1, ctaText2, ctaLink2, sliderStatus } = req.body;
-        const image = req.file ? req.file.path : null;
-        const updatedData = { tagLine, title, description, ctaText1, ctaLink1, ctaText2, ctaLink2, sliderStatus };
-        if (image) {
-            updatedData.image = image;
+        const {
+            tagLine,
+            title,
+            description,
+            ctaText1,
+            ctaLink1,
+            ctaText2,
+            ctaLink2,
+            sliderStatus
+        } = req.body;
+
+
+        // Find existing slider
+        const slider = await Slider.findById(req.params.id);
+
+        if (!slider) {
+            return res.status(404).json({
+                success: false,
+                message: "Slider not found"
+            });
         }
-        const updatedSlider = await Slider.findByIdAndUpdate(req.params.id, updatedData, { new: true });
-        if (!updatedSlider) {
-            return res.status(404).json({ success: false, message: "Slider not found" });
+
+
+        const updatedData = {
+            tagLine,
+            title,
+            description,
+            ctaText1,
+            ctaLink1,
+            ctaText2,
+            ctaLink2,
+            sliderStatus
+        };
+
+
+        if (req.file) {
+
+            // Delete old image
+            if (slider.image) {
+
+                const oldImagePath = path.join(
+                    process.cwd(),
+                    "public/uploads",
+                    path.basename(slider.image)
+                );
+
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
+            }
+
+
+            // Save new image
+            updatedData.image = req.file.filename || req.file.path;
+
         }
-        res.status(200).json({ success: true, data: updatedSlider });
+
+
+        const updatedSlider = await Slider.findByIdAndUpdate(
+            req.params.id,
+            updatedData,
+            {
+                new: true
+            }
+        );
+
+
+        res.status(200).json({
+            success: true,
+            data: updatedSlider
+        });
+
+
     } catch (error) {
-        res.status(500).json({ success: false, message: "Failed to update slider", error: error.message });
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to update slider",
+            error: error.message
+        });
     }
 };
-
 exports.deleteSlider = async (req, res) => {
     try {
-        const deletedSlider = await Slider.findByIdAndDelete(req.params.id);
-        if (!deletedSlider) {
-            return res.status(404).json({ success: false, message: "Slider not found" });
+
+        const slider = await Slider.findById(req.params.id);
+
+        if (!slider) {
+            return res.status(404).json({
+                success: false,
+                message: "Slider not found"
+            });
         }
-        res.status(200).json({ success: true, message: "Slider deleted successfully" });
+
+
+        // Delete image from storage
+        if (slider.image) {
+
+            const imagePath = path.join(
+                process.cwd(),
+                "public/uploads",
+                path.basename(slider.image)
+            );
+
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+            }
+        }
+
+
+        // Delete database record
+        await Slider.findByIdAndDelete(req.params.id);
+
+
+        res.status(200).json({
+            success: true,
+            message: "Slider deleted successfully"
+        });
+
+
     } catch (error) {
-        res.status(500).json({ success: false, message: "Failed to delete slider", error: error.message });
+
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete slider",
+            error: error.message
+        });
     }
 };

@@ -1,5 +1,6 @@
 const Accreditation = require("../../models/about/accreditation")
-
+const fs = require("fs");
+const path = require("path");
 exports.createAccreditation = async (req, res) => {
     try {
         const { title, description } = req.body;
@@ -51,37 +52,112 @@ exports.updateAccreditation = async (req, res) => {
     try {
         const { title, description } = req.body;
 
-        const updateData = { title, description };
+        // Find existing accreditation
+        const accreditation = await Accreditation.findById(req.params.id);
+
+        if (!accreditation) {
+            return res.status(404).json({
+                message: "Accreditation not found"
+            });
+        }
+
+        const updateData = {
+            title,
+            description
+        };
+
 
         if (req.file) {
+
+            // Delete old image
+            if (accreditation.image) {
+
+                const oldImagePath = path.join(
+                    process.cwd(),
+                    "public/uploads",
+                    accreditation.image
+                );
+
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
+            }
+
+
             updateData.image = req.file.filename || req.file.path.split(/[/\\]/).pop();
+
         } else if (req.body.image) {
+
             updateData.image = req.body.image.split(/[/\\]/).pop();
+
         }
 
-        const updatedAccreditation = await Accreditation.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
 
-        if (!updatedAccreditation) {
-            return res.status(404).json({ message: "Accreditation not found" });
-        }
+        const updatedAccreditation = await Accreditation.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
 
         res.status(200).json(updatedAccreditation);
+
     } catch (error) {
         console.error(error);
+
         const statusCode = error.name === "ValidationError" ? 400 : 500;
-        res.status(statusCode).json({ message: error.message || "Error updating accreditation" });
+
+        res.status(statusCode).json({
+            message: error.message || "Error updating accreditation"
+        });
     }
 };
 
 exports.deleteAccreditation = async (req, res) => {
     try {
-        const deletedAccreditation = await Accreditation.findByIdAndDelete(req.params.id);
-        if (!deletedAccreditation) {
-            return res.status(404).json({ message: "Accreditation not found" });
+
+        // Find existing accreditation
+        const accreditation = await Accreditation.findById(req.params.id);
+
+        if (!accreditation) {
+            return res.status(404).json({
+                message: "Accreditation not found"
+            });
         }
-        res.status(200).json({ message: "Accreditation deleted successfully" });
+
+
+        // Delete image from public/uploads
+        if (accreditation.image) {
+
+            const imagePath = path.join(
+                process.cwd(),
+                "public/uploads",
+                accreditation.image
+            );
+
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+            }
+        }
+
+
+        // Delete database record
+        await Accreditation.findByIdAndDelete(req.params.id);
+
+
+        res.status(200).json({
+            message: "Accreditation deleted successfully"
+        });
+
+
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error deleting accreditation" });
+
+        res.status(500).json({
+            message: "Error deleting accreditation"
+        });
     }
 };

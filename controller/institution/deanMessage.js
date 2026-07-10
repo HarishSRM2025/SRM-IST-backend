@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const DeanMessageModel = require("../../models/institution/deanMessage")
 
 const createDeanMessage = async (req,res)=>{
@@ -63,16 +65,45 @@ const getDeanMessageById = async (req,res)=>{
     }
 }
 
-const updateDeanMessage = async (req,res)=>{
+const updateDeanMessage = async (req, res) => {
     try {
-        const { institutionId,deanName,message} = req.body;
-        let deanImage = req.body.deanImage; // Fallback to existing image if passed
-        
-        if (req.file) {
-            deanImage = req.file.filename;
+        const { institutionId, deanName, message } = req.body;
+
+        // Find existing dean message
+        const oldDeanMessage = await DeanMessageModel.findById(req.params.id);
+
+        if (!oldDeanMessage) {
+            return res.status(404).json({
+                success: false,
+                message: "Dean message not found"
+            });
         }
 
-        const existingMessage = await DeanMessageModel.findOne({ institutionId, _id: { $ne: req.params.id } });
+        let deanImage = oldDeanMessage.deanImage; // Keep old image
+
+        // If new image uploaded
+        if (req.file) {
+            deanImage = req.file.filename;
+
+            // Delete old image
+            if (oldDeanMessage.deanImage) {
+                const oldImagePath = path.join(
+                    imagePath,
+                    oldDeanMessage.deanImage
+                );
+
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
+            }
+        }
+
+        // Check duplicate institution
+        const existingMessage = await DeanMessageModel.findOne({
+            institutionId,
+            _id: { $ne: req.params.id }
+        });
+
         if (existingMessage) {
             return res.status(400).json({
                 success: false,
@@ -80,33 +111,73 @@ const updateDeanMessage = async (req,res)=>{
             });
         }
 
-        const deanMessage = await DeanMessageModel.findByIdAndUpdate(req.params.id,{institutionId,deanName,deanImage,message},{new:true})
-        res.status(200).json({
-            success:true,
-            data:deanMessage
-        })
-    } catch (error) {
-        res.status(500).json({
-            success:false,
-            message:"Internal Server Error"
-        })
-    }
-}
+        const deanMessage = await DeanMessageModel.findByIdAndUpdate(
+            req.params.id,
+            {
+                institutionId,
+                deanName,
+                deanImage,
+                message
+            },
+            { new: true }
+        );
 
-const deleteDeanMessage = async (req,res)=>{
-    try {
-        const deanMessage = await DeanMessageModel.findByIdAndDelete(req.params.id)
         res.status(200).json({
-            success:true,
-            data:deanMessage
-        })
+            success: true,
+            data: deanMessage
+        });
+
     } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+    }
+};
+
+
+
+const deleteDeanMessage = async (req, res) => {
+    try {
+        // Find existing dean message
+        const deanMessage = await DeanMessageModel.findById(req.params.id);
+
+        if (!deanMessage) {
+            return res.status(404).json({
+                success: false,
+                message: "Dean message not found"
+            });
+        }
+
+        // Delete image from storage
+        if (deanMessage.deanImage) {
+            const filePath = path.join(
+                imagePath,
+                deanMessage.deanImage
+            );
+
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+
+        // Delete database record
+        await DeanMessageModel.findByIdAndDelete(req.params.id);
+
+        res.status(200).json({
+            success: true,
+            message: "Dean message deleted successfully"
+        });
+
+    } catch (error) {
+        console.log(error);
         res.status(500).json({
             success:false,
             message:"Internal Server Error"
-        })
+        });
     }
-}
+};
 
 module.exports = {
     createDeanMessage,

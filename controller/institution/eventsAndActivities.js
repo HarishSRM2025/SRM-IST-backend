@@ -1,5 +1,6 @@
 const InstitutionEventsAndActivities = require("../../models/institution/eventsAndActivities")
-
+const fs = require("fs");
+const path = require("path");
 const toBoolean = (value) => value === true || value === "true" || value === "on" || value === "1";
 
 exports.createEventsAndActivities = async (req, res) => {
@@ -80,8 +81,32 @@ exports.getEventsAndActivitiesById = async (req, res) => {
 
 exports.updateEventsAndActivitiesById = async (req, res) => {
     try {
-        const {id} = req.params;
-        const {institutionId, name, description, eventDateTime, location, type, conductedBy, co_ordinator, resourcePerson, resourcePersonDesignation, status, announcement} = req.body;
+        const { id } = req.params;
+
+        const {
+            institutionId,
+            name,
+            description,
+            eventDateTime,
+            location,
+            type,
+            conductedBy,
+            co_ordinator,
+            resourcePerson,
+            resourcePersonDesignation,
+            status,
+            announcement
+        } = req.body;
+
+        // Get existing event
+        const existingEvent = await InstitutionEventsAndActivities.findById(id);
+
+        if (!existingEvent) {
+            return res.status(404).json({
+                message: "Event not found"
+            });
+        }
+
         const updateData = {
             institutionId,
             name,
@@ -97,35 +122,132 @@ exports.updateEventsAndActivitiesById = async (req, res) => {
             announcement: toBoolean(announcement)
         };
 
+
         // Support multiple images on update
         let eventImage = [];
+
         if (req.files && req.files.length > 0) {
-            eventImage = req.files.map(f => f.filename);
+
+            // Delete old images
+            if (existingEvent.eventImage && existingEvent.eventImage.length > 0) {
+
+                existingEvent.eventImage.forEach((image) => {
+
+                    const oldImagePath = path.join(
+                        process.cwd(),
+                        "public/uploads",
+                        image
+                    );
+
+                    if (fs.existsSync(oldImagePath)) {
+                        fs.unlinkSync(oldImagePath);
+                    }
+
+                });
+            }
+
+            // Add new images
+            eventImage = req.files.map(file => file.filename);
+
         } else if (req.file) {
+
+            // Delete old images
+            if (existingEvent.eventImage && existingEvent.eventImage.length > 0) {
+
+                existingEvent.eventImage.forEach((image) => {
+
+                    const oldImagePath = path.join(
+                        process.cwd(),
+                        "public/uploads",
+                        image
+                    );
+
+                    if (fs.existsSync(oldImagePath)) {
+                        fs.unlinkSync(oldImagePath);
+                    }
+
+                });
+            }
+
             eventImage = [req.file.filename];
+
         } else if (req.body.eventImage) {
-            eventImage = Array.isArray(req.body.eventImage) ? req.body.eventImage : [req.body.eventImage];
+
+            eventImage = Array.isArray(req.body.eventImage)
+                ? req.body.eventImage
+                : [req.body.eventImage];
         }
+
+
         if (eventImage.length > 0) {
             updateData.eventImage = eventImage;
         }
 
-        const event = await InstitutionEventsAndActivities.findByIdAndUpdate(id, updateData, {new: true});
+
+        const event = await InstitutionEventsAndActivities.findByIdAndUpdate(
+            id,
+            updateData,
+            { new: true }
+        );
+
         res.status(200).json(event);
+
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error updating Events and Activities" });
+        res.status(500).json({
+            message: "Error updating Events and Activities"
+        });
     }
 };
 
+
 exports.deleteEventsAndActivitiesById = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
+
+        // Get event first
+        const event = await InstitutionEventsAndActivities.findById(id);
+
+        if (!event) {
+            return res.status(404).json({
+                message: "Event not found"
+            });
+        }
+
+
+        // Delete all images
+        if (event.eventImage && event.eventImage.length > 0) {
+
+            event.eventImage.forEach((image) => {
+
+                const imagePath = path.join(
+                    process.cwd(),
+                    "public/uploads",
+                    image
+                );
+
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                }
+
+            });
+
+        }
+
+
+        // Delete database record
         await InstitutionEventsAndActivities.findByIdAndDelete(id);
-        res.status(200).json({message: "Events and Activities deleted successfully"});
+
+
+        res.status(200).json({
+            message: "Events and Activities deleted successfully"
+        });
+
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error deleting Events and Activities" });
+        res.status(500).json({
+            message: "Error deleting Events and Activities"
+        });
     }
 };
 

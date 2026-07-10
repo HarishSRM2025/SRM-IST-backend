@@ -13,7 +13,6 @@ router.get("/getfacultybyinstitution/:institution", Faculty.getFacultyByInstitut
 router.get("/getfacultybyid/:id", Faculty.getFacultyById);
 router.put("/updatefaculty/:id", upload.single("facultyImage"), Faculty.updateFaculty);
 router.delete("/deletefaculty/:id", Faculty.deleteFaculty);
-router.get("/facultydirectory", Faculty.getFacultyDirectory);
 
 // Faculty Achievements
 router.post("/addfacultyresearch", FacultyResearch.addFacultyResearch);

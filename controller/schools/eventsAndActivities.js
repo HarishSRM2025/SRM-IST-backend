@@ -1,4 +1,8 @@
 const EventsAndActivities = require("../../models/schools/eventsAndActivities");
+const fs = require("fs");
+const path = require("path");
+
+const uploadPath = path.join(process.cwd(), "public/uploads");
 
 const toBoolean = (value) => value === true || value === "true" || value === "on" || value === "1";
 
@@ -92,6 +96,17 @@ exports.updateEventsAndActivities = async (req, res) => {
             announcement
         } = req.body;
 
+
+        // Find existing record
+        const existingRecord = await EventsAndActivities.findById(req.params.id);
+
+        if (!existingRecord) {
+            return res.status(404).json({
+                message: "Events and Activities not found"
+            });
+        }
+
+
         const updateData = {
             school,
             name,
@@ -107,41 +122,140 @@ exports.updateEventsAndActivities = async (req, res) => {
             announcement: toBoolean(announcement)
         };
 
-        // Support multiple images on update
+
         let eventImage = [];
+
+
         if (req.files && req.files.length > 0) {
-            eventImage = req.files.map(f => f.filename);
+
+            // Delete old images
+            if (existingRecord.eventImage && existingRecord.eventImage.length > 0) {
+
+                existingRecord.eventImage.forEach((image) => {
+
+                    const oldImagePath = path.join(
+                        uploadPath,
+                        image
+                    );
+
+                    if (fs.existsSync(oldImagePath)) {
+                        fs.unlinkSync(oldImagePath);
+                    }
+
+                });
+            }
+
+
+            // Store new images
+            eventImage = req.files.map(file => file.filename);
+
+
         } else if (req.file) {
+
+
+            // Delete old images
+            if (existingRecord.eventImage && existingRecord.eventImage.length > 0) {
+
+                existingRecord.eventImage.forEach((image) => {
+
+                    const oldImagePath = path.join(
+                        uploadPath,
+                        image
+                    );
+
+                    if (fs.existsSync(oldImagePath)) {
+                        fs.unlinkSync(oldImagePath);
+                    }
+
+                });
+            }
+
+
             eventImage = [req.file.filename];
+
+
         } else if (req.body.eventImage) {
-            eventImage = Array.isArray(req.body.eventImage) ? req.body.eventImage : [req.body.eventImage];
+
+            eventImage = Array.isArray(req.body.eventImage)
+                ? req.body.eventImage
+                : [req.body.eventImage];
+
         }
+
+
         if (eventImage.length > 0) {
             updateData.eventImage = eventImage;
         }
 
-        const updatedRecord = await EventsAndActivities.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
-        if (!updatedRecord) {
-            return res.status(404).json({ message: "Events and Activities not found" });
-        }
+        const updatedRecord = await EventsAndActivities.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            {
+                new: true
+            }
+        );
+
 
         res.status(200).json(updatedRecord);
+
+
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error updating Events and Activities" });
+
+        res.status(500).json({
+            message: "Error updating Events and Activities"
+        });
     }
 };
 
 exports.deleteEventsAndActivities = async (req, res) => {
     try {
-        const deletedRecord = await EventsAndActivities.findByIdAndDelete(req.params.id);
-        if (!deletedRecord) {
-            return res.status(404).json({ message: "Events and Activities not found" });
+
+        const record = await EventsAndActivities.findById(req.params.id);
+
+
+        if (!record) {
+            return res.status(404).json({
+                message: "Events and Activities not found"
+            });
         }
-        res.status(200).json({ message: "Events and Activities deleted successfully" });
+
+
+        // Delete all event images
+        if (record.eventImage && record.eventImage.length > 0) {
+
+            record.eventImage.forEach((image) => {
+
+                const imagePath = path.join(
+                    uploadPath,
+                    image
+                );
+
+
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                }
+
+            });
+        }
+
+
+        // Delete database record
+        await EventsAndActivities.findByIdAndDelete(req.params.id);
+
+
+        res.status(200).json({
+            message: "Events and Activities deleted successfully"
+        });
+
+
     } catch (error) {
+
         console.error(error);
-        res.status(500).json({ message: "Error deleting Events and Activities" });
+
+        res.status(500).json({
+            message: "Error deleting Events and Activities"
+        });
     }
 };
