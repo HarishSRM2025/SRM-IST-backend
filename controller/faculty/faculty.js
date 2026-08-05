@@ -13,7 +13,7 @@ exports.addFaculty = async (req, res) => {
         }
         let facultyImage = '';
         if (req.file) {
-            facultyImage = req.file.path;
+            facultyImage = "public/uploads/" + req.file.filename;
         }
         // Parse subjects if it arrives as a JSON string (from FormData)
         let parsedSubjects = subjects;
@@ -107,14 +107,20 @@ exports.updateFaculty = async (req, res) => {
 
             // Delete old image
             if (faculty.facultyImage) {
-                const oldImagePath = path.join(process.cwd(), faculty.facultyImage);
+                const cleanRel = faculty.facultyImage.replace(/\\/g, '/');
+                const oldRel = cleanRel.startsWith('public/')
+                    ? cleanRel
+                    : cleanRel.startsWith('uploads/')
+                        ? `public/${cleanRel}`
+                        : `public/uploads/${cleanRel}`;
+                const oldImagePath = path.join(__dirname, "../../", oldRel);
 
                 if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
+                    try { fs.unlinkSync(oldImagePath); } catch (e) {}
                 }
             }
 
-            updateData.facultyImage = req.file.path;
+            updateData.facultyImage = "public/uploads/" + req.file.filename;
         }
 
         // Parse subjects
@@ -153,10 +159,16 @@ exports.deleteFaculty = async (req, res) => {
 
         // Delete profile image
         if (faculty.facultyImage) {
-            const imagePath = path.join(process.cwd(), faculty.facultyImage);
+            const cleanRel = faculty.facultyImage.replace(/\\/g, '/');
+            const oldRel = cleanRel.startsWith('public/')
+                ? cleanRel
+                : cleanRel.startsWith('uploads/')
+                    ? `public/${cleanRel}`
+                    : `public/uploads/${cleanRel}`;
+            const imagePath = path.join(__dirname, "../../", oldRel);
 
             if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
+                try { fs.unlinkSync(imagePath); } catch (e) {}
             }
         }
 
