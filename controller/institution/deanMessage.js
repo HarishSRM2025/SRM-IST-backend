@@ -1,6 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 const DeanMessageModel = require("../../models/institution/deanMessage")
+const imagePath = path.join(
+    process.cwd(),
+    "public/uploads"
+);
+
 
 const createDeanMessage = async (req,res)=>{
     try {
