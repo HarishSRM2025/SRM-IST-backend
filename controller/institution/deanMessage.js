@@ -5,6 +5,12 @@ const DeanMessageModel = require("../../models/institution/deanMessage")
 const createDeanMessage = async (req,res)=>{
     try {
         const {institutionId,deanName,message} = req.body
+        if (req.coordinator && String(institutionId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({
+                success:false,
+                message:"Forbidden"
+            })
+        }
         const deanImage = req.file ? req.file.filename : null;
 
         if(!institutionId || !deanName || !deanImage || !message){
@@ -37,7 +43,7 @@ const createDeanMessage = async (req,res)=>{
 
 const getAllDeanMessages = async (req,res)=>{
     try {
-        const deanMessages = await DeanMessageModel.find()
+        const deanMessages = req.coordinator ? await DeanMessageModel.find({ institutionId: req.coordinator.instituteId }) : await DeanMessageModel.find()
         res.status(200).json({
             success:true,
             data:deanMessages
@@ -53,6 +59,9 @@ const getAllDeanMessages = async (req,res)=>{
 const getDeanMessageById = async (req,res)=>{
     try {
         const deanMessage = await DeanMessageModel.findById(req.params.id)
+        if (req.coordinator && String(deanMessage?.institutionId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success:false, message:"Forbidden" })
+        }
         res.status(200).json({
             success:true,
             data:deanMessage
@@ -71,6 +80,9 @@ const updateDeanMessage = async (req, res) => {
 
         // Find existing dean message
         const oldDeanMessage = await DeanMessageModel.findById(req.params.id);
+        if (req.coordinator && String(oldDeanMessage?.institutionId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success:false, message:"Forbidden" })
+        }
 
         if (!oldDeanMessage) {
             return res.status(404).json({
@@ -142,6 +154,9 @@ const deleteDeanMessage = async (req, res) => {
     try {
         // Find existing dean message
         const deanMessage = await DeanMessageModel.findById(req.params.id);
+        if (req.coordinator && String(deanMessage?.institutionId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success:false, message:"Forbidden" })
+        }
 
         if (!deanMessage) {
             return res.status(404).json({

@@ -57,7 +57,8 @@ exports.createEventsAndActivities = async (req, res) => {
 
 exports.getAllEventsAndActivities = async (req, res) => {
     try {
-        const list = await InstitutionEventsAndActivities.find().populate("institutionId");
+        const filter = req.coordinator ? { institutionId: req.coordinator.instituteId } : {};
+        const list = await InstitutionEventsAndActivities.find(filter).populate("institutionId");
         res.status(200).json(list);
     } catch (error) {
         console.error(error);

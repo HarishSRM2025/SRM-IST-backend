@@ -1,4 +1,6 @@
-const SchoolDivisionEventsAndActivities = require("../../models/schoolDivision/eventsAndActivities")
+const SchoolDivisionEventsAndActivities = require("../../models/schoolDivision/eventsAndActivities");
+const SchoolDivision = require("../../models/schoolDivision/schoolsDivision");
+const School = require("../../models/schools/schools");
 const fs = require("fs");
 const path = require("path");
 
@@ -58,7 +60,20 @@ exports.createEventsAndActivities = async (req, res) => {
 
 exports.getAllEventsAndActivities = async (req, res) => {
     try {
-        const list = await SchoolDivisionEventsAndActivities.find().populate("schoolDivisionId");
+        let filter = {};
+        if (req.coordinator) {
+            if (req.coordinator.mappingLevel === 'division') {
+                filter = { schoolDivisionId: req.coordinator.divisionId };
+            } else if (req.coordinator.mappingLevel === 'school') {
+                const divisionIds = await SchoolDivision.find({ schoolId: req.coordinator.schoolId }).distinct('_id');
+                filter = { schoolDivisionId: { $in: divisionIds } };
+            } else if (req.coordinator.mappingLevel === 'institute') {
+                const schoolIds = await School.find({ institutionId: req.coordinator.instituteId }).distinct('_id');
+                const divisionIds = await SchoolDivision.find({ schoolId: { $in: schoolIds } }).distinct('_id');
+                filter = { schoolDivisionId: { $in: divisionIds } };
+            }
+        }
+        const list = await SchoolDivisionEventsAndActivities.find(filter).populate("schoolDivisionId");
         res.status(200).json(list);
     } catch (error) {
         console.error(error);

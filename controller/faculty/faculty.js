@@ -1,6 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const Faculty = require("../../models/faculty/faculty");
+const School = require("../../models/schools/schools");
+const SchoolDivision = require("../../models/schoolDivision/schoolsDivision");
 
 exports.addFaculty = async (req, res) => {
     try {
@@ -26,6 +28,23 @@ exports.addFaculty = async (req, res) => {
             try { parsedEducationDetails = JSON.parse(educationDetails); } catch (e) { parsedEducationDetails = []; }
         }
         const hasInstitution = institution && institution !== "null" && institution !== "";
+        if (req.coordinator) {
+            if (req.coordinator.mappingLevel === 'institute' && String(institution) !== String(req.coordinator.instituteId)) {
+                return res.status(403).json({ message: "Forbidden" });
+            }
+            if (req.coordinator.mappingLevel === 'school') {
+                const schoolDoc = await School.findById(school);
+                if (!schoolDoc || String(schoolDoc.institutionId) !== String(req.coordinator.instituteId) || String(school) !== String(req.coordinator.schoolId)) {
+                    return res.status(403).json({ message: "Forbidden" });
+                }
+            }
+            if (req.coordinator.mappingLevel === 'division') {
+                const divisionDoc = await SchoolDivision.findById(schoolDivision);
+                if (!divisionDoc || String(divisionDoc._id) !== String(req.coordinator.divisionId)) {
+                    return res.status(403).json({ message: "Forbidden" });
+                }
+            }
+        }
         const faculty = new Faculty({
             facultyName,
             facultyEmail,
@@ -46,9 +65,38 @@ exports.addFaculty = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 }
+async function buildFacultyCoordinatorFilter(coordinator) {
+    if (!coordinator) return {};
+    if (coordinator.mappingLevel === 'institute') {
+        const schoolIds = await School.find({ institutionId: coordinator.instituteId }).distinct('_id');
+        const divisionIds = await SchoolDivision.find({ schoolId: { $in: schoolIds } }).distinct('_id');
+        return {
+            $or: [
+                { institution: coordinator.instituteId },
+                { school: { $in: schoolIds } },
+                { schoolDivision: { $in: divisionIds } }
+            ]
+        };
+    }
+    if (coordinator.mappingLevel === 'school') {
+        const divisionIds = await SchoolDivision.find({ schoolId: coordinator.schoolId }).distinct('_id');
+        return {
+            $or: [
+                { school: coordinator.schoolId },
+                { schoolDivision: { $in: divisionIds } }
+            ]
+        };
+    }
+    if (coordinator.mappingLevel === 'division') {
+        return { schoolDivision: coordinator.divisionId };
+    }
+    return {};
+}
+
 exports.getFaculty = async (req, res) => {
     try {
-        const faculty = await Faculty.find();
+        const filter = await buildFacultyCoordinatorFilter(req.coordinator);
+        const faculty = await Faculty.find(filter);
         res.status(200).json(faculty);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -56,6 +104,9 @@ exports.getFaculty = async (req, res) => {
 }
 exports.getFacultyBySchool = async (req, res) => {
     try {
+        if (req.coordinator && req.coordinator.mappingLevel === 'division' && String(req.params.school) !== String(req.coordinator.schoolId)) {
+            return res.status(403).json({ message: "Forbidden" });
+        }
         const faculty = await Faculty.find({ school: req.params.school });
         res.status(200).json(faculty);
     } catch (err) {
@@ -64,6 +115,9 @@ exports.getFacultyBySchool = async (req, res) => {
 }
 exports.getFacultyByInstitution = async (req, res) => {
     try {
+        if (req.coordinator && String(req.params.institution) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ message: "Forbidden" });
+        }
         const faculty = await Faculty.find({ institution: req.params.institution });
         res.status(200).json(faculty);
     } catch (err) {
@@ -87,6 +141,11 @@ exports.updateFaculty = async (req, res) => {
         }
 
         const updateData = { ...req.body };
+        if (req.coordinator) {
+            if (req.coordinator.mappingLevel === 'institute' && String(updateData.institution || faculty.institution) !== String(req.coordinator.instituteId)) return res.status(403).json({ message: "Forbidden" });
+            if (req.coordinator.mappingLevel === 'school' && String(updateData.school || faculty.school) !== String(req.coordinator.schoolId)) return res.status(403).json({ message: "Forbidden" });
+            if (req.coordinator.mappingLevel === 'division' && String(updateData.schoolDivision || faculty.schoolDivision) !== String(req.coordinator.divisionId)) return res.status(403).json({ message: "Forbidden" });
+        }
 
         // Sanitize ObjectId fields to prevent casting errors
         if ('institution' in updateData || 'school' in updateData || 'schoolDivision' in updateData) {

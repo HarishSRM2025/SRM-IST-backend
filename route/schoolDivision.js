@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/multer");
+const { requireCoordinatorScope } = require("../middleware/coordinatorScope");
 const { createSchoolDivision, getAllSchoolDivision, getSchoolDivisionById, updateSchoolDivisionById, deleteSchoolDivisionById } = require("../controller/schoolDivision/schoolDivision");
 const { addHODMessage, getHODMessage, getHODMessageById, updateHODMessage, deleteHODMessage } = require("../controller/schoolDivision/hodMessage");
 const { createAchievement, getAllAchievements, getAchievementById, updateAchievement, deleteAchievement } = require("../controller/schoolDivision/achievements");
@@ -8,6 +9,7 @@ const { createEventsAndActivities, getAllEventsAndActivities, getEventsAndActivi
 const { createProgramme, getAllProgrammes, getProgrammeById, updateProgramme, deleteProgramme } = require("../controller/schoolDivision/programmes");
 
 // School Division routes
+router.use(requireCoordinatorScope);
 router.post('/add', createSchoolDivision);
 router.get('/getall', getAllSchoolDivision);
 router.get('/get/:id', getSchoolDivisionById);

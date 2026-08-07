@@ -8,8 +8,10 @@ const { createInstituteStats, getAllInstituteStats, getInstituteStatsById, updat
 const { createEventsAndActivities, getAllEventsAndActivities, getEventsAndActivitiesById, updateEventsAndActivitiesById, deleteEventsAndActivitiesById, getRecentEventsAndActivities } = require('../controller/institution/eventsAndActivities');
 const { createProgramme, getAllProgrammes, getProgrammeById, updateProgramme, deleteProgramme } = require('../controller/institution/programmes');
 const upload = require('../middleware/multer');
+const { requireCoordinatorScope } = require('../middleware/coordinatorScope');
 
 // institution
+router.use(requireCoordinatorScope);
 router.post('/create', createIntitution)
 router.get('/getall', getAllIntitutions)
 router.get('/getone/:id', getIntitutionById)

@@ -1,4 +1,5 @@
 const InstituteStats = require("../../models/institution/instituteStats");
+const Institution = require("../../models/institution/institution");
 
 const normalizeStats = (stats = []) => {
     if (!Array.isArray(stats)) return [];
@@ -16,6 +17,9 @@ const createInstituteStats = async (req, res) => {
         const { instituteId, institutionId } = req.body;
         const stats = normalizeStats(req.body.instituteStats);
         const linkedInstituteId = instituteId || institutionId;
+        if (req.coordinator && String(linkedInstituteId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success: false, message: "Forbidden" });
+        }
 
         if (!linkedInstituteId || stats.length === 0) {
             return res.status(400).json({
@@ -43,7 +47,8 @@ const createInstituteStats = async (req, res) => {
 
 const getAllInstituteStats = async (req, res) => {
     try {
-        const instituteStats = await InstituteStats.find();
+        const filter = req.coordinator ? { instituteId: req.coordinator.instituteId } : {};
+        const instituteStats = await InstituteStats.find(filter);
         res.status(200).json({
             success: true,
             data: instituteStats
@@ -59,6 +64,9 @@ const getAllInstituteStats = async (req, res) => {
 const getInstituteStatsById = async (req, res) => {
     try {
         const instituteStats = await InstituteStats.findById(req.params.id);
+        if (req.coordinator && String(instituteStats?.instituteId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success: false, message: "Forbidden" });
+        }
         res.status(200).json({
             success: true,
             data: instituteStats
@@ -73,6 +81,10 @@ const getInstituteStatsById = async (req, res) => {
 
 const updateInstituteStatsById = async (req, res) => {
     try {
+        const current = await InstituteStats.findById(req.params.id);
+        if (req.coordinator && String(current?.instituteId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success: false, message: "Forbidden" });
+        }
         const { instituteId, institutionId } = req.body;
         const update = {
             instituteStats: normalizeStats(req.body.instituteStats)
@@ -109,6 +121,10 @@ const updateInstituteStatsById = async (req, res) => {
 
 const deleteInstituteStatsById = async (req, res) => {
     try {
+        const current = await InstituteStats.findById(req.params.id);
+        if (req.coordinator && String(current?.instituteId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success: false, message: "Forbidden" });
+        }
         const instituteStats = await InstituteStats.findByIdAndDelete(req.params.id);
         res.status(200).json({
             success: true,

@@ -1,4 +1,6 @@
-const SchoolDivisionHodMessage = require("../../models/schoolDivision/hodMessage")
+const SchoolDivisionHodMessage = require("../../models/schoolDivision/hodMessage");
+const SchoolDivision = require("../../models/schoolDivision/schoolsDivision");
+const School = require("../../models/schools/schools");
 
 exports.addHODMessage = async (req, res) => {
     try {
@@ -27,11 +29,24 @@ exports.addHODMessage = async (req, res) => {
 
 exports.getHODMessage = async (req, res) => {
     try {
-        const hodMessage = await SchoolDivisionHodMessage.find().populate("schoolDivisionId")
-        res.status(200).json(hodMessage)
+        let filter = {};
+        if (req.coordinator) {
+            if (req.coordinator.mappingLevel === 'division') {
+                filter = { schoolDivisionId: req.coordinator.divisionId };
+            } else if (req.coordinator.mappingLevel === 'school') {
+                const divisionIds = await SchoolDivision.find({ schoolId: req.coordinator.schoolId }).distinct('_id');
+                filter = { schoolDivisionId: { $in: divisionIds } };
+            } else if (req.coordinator.mappingLevel === 'institute') {
+                const schoolIds = await School.find({ institutionId: req.coordinator.instituteId }).distinct('_id');
+                const divisionIds = await SchoolDivision.find({ schoolId: { $in: schoolIds } }).distinct('_id');
+                filter = { schoolDivisionId: { $in: divisionIds } };
+            }
+        }
+        const hodMessage = await SchoolDivisionHodMessage.find(filter).populate("schoolDivisionId");
+        res.status(200).json(hodMessage);
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ message: "Error fetching HOD Message" })
+        console.log(error);
+        res.status(500).json({ message: "Error fetching HOD Message" });
     }
 }
 

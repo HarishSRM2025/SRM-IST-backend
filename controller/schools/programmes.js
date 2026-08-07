@@ -1,4 +1,5 @@
 const Programme = require("../../models/schools/programmes");
+const School = require("../../models/schools/schools");
 
 exports.createProgramme = async (req, res) => {
     try {
@@ -23,7 +24,16 @@ exports.createProgramme = async (req, res) => {
 
 exports.getAllProgrammes = async (req, res) => {
     try {
-        const programmes = await Programme.find().populate("school");
+        let filter = {};
+        if (req.coordinator) {
+            if (req.coordinator.mappingLevel === 'school' || req.coordinator.mappingLevel === 'division') {
+                filter = { school: req.coordinator.schoolId };
+            } else if (req.coordinator.mappingLevel === 'institute') {
+                const schoolIds = await School.find({ institutionId: req.coordinator.instituteId }).distinct('_id');
+                filter = { school: { $in: schoolIds } };
+            }
+        }
+        const programmes = await Programme.find(filter).populate("school");
         res.status(200).json(programmes);
     } catch (error) {
         console.error(error);

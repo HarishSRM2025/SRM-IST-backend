@@ -4,8 +4,10 @@ const upload = require("../middleware/multer");
 const Faculty = require("../controller/faculty/faculty");
 const FacultyResearch = require("../controller/faculty/facultyResearch");
 const FacultyExperience = require("../controller/faculty/facultyExperience");
+const { requireCoordinatorScope } = require("../middleware/coordinatorScope");
 
 // Faculty Personal Detail
+router.use(requireCoordinatorScope);
 router.post("/addfaculty", upload.single("facultyImage"), Faculty.addFaculty);
 router.get("/getfaculty", Faculty.getFaculty);
 router.get("/getfacultybyschool/:school", Faculty.getFacultyBySchool);

@@ -1,7 +1,12 @@
 const InstitutionModel = require("../../models/institution/institution")
+const School = require("../../models/schools/schools");
+const SchoolDivision = require("../../models/schoolDivision/schoolsDivision");
 
 const createIntitution = async (req, res) => {
     try {
+        if (req.coordinator) {
+            return res.status(403).json({ success:false, message:"Coordinators cannot create new institutions" });
+        }
         const { name, vision, mission } = req.body
         if (!name || !vision || !mission) {
             return res.status(400).json({
@@ -24,7 +29,7 @@ const createIntitution = async (req, res) => {
 
 const getAllIntitutions = async (req,res)=>{
     try {
-        const institutions = await InstitutionModel.find()
+        const institutions = req.coordinator ? await InstitutionModel.find({ _id: req.coordinator.instituteId }) : await InstitutionModel.find()
         res.status(200).json({
             success:true,
             data:institutions
@@ -40,6 +45,9 @@ const getAllIntitutions = async (req,res)=>{
 const getIntitutionById = async (req,res)=>{
     try {
         const institution = await InstitutionModel.findById(req.params.id)
+        if (req.coordinator && String(req.coordinator.instituteId) !== String(req.params.id)) {
+            return res.status(403).json({ success:false, message:"Forbidden" });
+        }
         res.status(200).json({
             success:true,
             data:institution
@@ -54,6 +62,9 @@ const getIntitutionById = async (req,res)=>{
 
 const updateIntitution = async (req,res)=>{
     try {
+        if (req.coordinator && String(req.coordinator.instituteId) !== String(req.params.id)) {
+            return res.status(403).json({ success:false, message:"Forbidden" });
+        }
         const institution = await InstitutionModel.findByIdAndUpdate(req.params.id,req.body,{new:true})
         res.status(200).json({
             success:true,
@@ -69,6 +80,9 @@ const updateIntitution = async (req,res)=>{
 
 const deleteIntitution = async (req,res)=>{
     try {
+        if (req.coordinator && String(req.coordinator.instituteId) !== String(req.params.id)) {
+            return res.status(403).json({ success:false, message:"Forbidden" });
+        }
         const institution = await InstitutionModel.findByIdAndDelete(req.params.id)
         res.status(200).json({
             success:true,

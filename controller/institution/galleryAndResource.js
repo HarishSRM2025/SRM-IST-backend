@@ -29,7 +29,8 @@ exports.createGalleryAndResource = async (req, res) => {
 
 exports.getAllGalleryAndResources = async (req, res) => {
     try {
-        const list = await GalleryAndResource.find().populate("institutionId");
+        const filter = req.coordinator ? { institutionId: req.coordinator.instituteId } : {};
+        const list = await GalleryAndResource.find(filter).populate("institutionId");
         res.status(200).json(list);
     } catch (error) {
         console.error(error);

@@ -1,253 +1,124 @@
-const InfrastructureModel = require("../../models/institution/infrastructure")
+const InfrastructureModel = require("../../models/institution/infrastructure");
 const fs = require("fs");
 const path = require("path");
 
-const getInfrastructure = async (req,res)=>{
+const getInfrastructure = async (req, res) => {
     try {
-        const infrastructure = await InfrastructureModel.find()
-        res.status(200).json({
-            success:true,
-            data:infrastructure
-        })
+        const infrastructure = req.coordinator
+            ? await InfrastructureModel.find({ institutionId: req.coordinator.instituteId })
+            : await InfrastructureModel.find();
+        res.status(200).json({ success: true, data: infrastructure });
     } catch (error) {
-        console.log(error)
-        res.status(500).json({
-            success:false,
-            message:"Internal server error"
-        })
+        console.log(error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
-}
+};
 
-const createInfrastructure = async (req,res)=>{
+const createInfrastructure = async (req, res) => {
     try {
-        const {institutionId,infraName,infraDesc,equipment,capacity} = req.body
+        const { institutionId, infraName, infraDesc, equipment, capacity } = req.body;
+        if (req.coordinator && String(institutionId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success: false, message: "Forbidden" });
+        }
         const infraImage = req.file ? req.file.filename : null;
 
         let equipmentArray = [];
         try {
             if (equipment) {
-                equipmentArray = typeof equipment === 'string' ? JSON.parse(equipment) : equipment;
-                if (!Array.isArray(equipmentArray)) equipmentArray = [equipment];
+                equipmentArray = typeof equipment === "string" ? JSON.parse(equipment) : equipment;
+                if (!Array.isArray(equipmentArray)) equipmentArray = [equipmentArray];
             }
-        } catch(e) {
+        } catch (e) {
             equipmentArray = [equipment];
         }
 
-        if(!institutionId || !infraName || !infraDesc || !infraImage){
-            return res.status(400).json({
-                success:false,
-                message:"All required fields must be provided, including an image."
-            })
-        }
-        const createData = {
-            institutionId,
-            infraName,
-            infraDesc,
-            infraImage,
-            equipment: equipmentArray
-        };
-        if (capacity !== undefined && capacity !== '') {
-            createData.capacity = Number(capacity);
+        if (!institutionId || !infraName || !infraDesc || !infraImage) {
+            return res.status(400).json({ success: false, message: "All required fields must be provided, including an image." });
         }
 
-        const infrastructure = await InfrastructureModel.create(createData)
-        res.status(200).json({
-            success:true,
-            data:infrastructure
-        })
+        const createData = { institutionId, infraName, infraDesc, infraImage, equipment: equipmentArray };
+        if (capacity !== undefined && capacity !== "") createData.capacity = Number(capacity);
+
+        const infrastructure = await InfrastructureModel.create(createData);
+        res.status(200).json({ success: true, data: infrastructure });
     } catch (error) {
-        console.log(error)
-        res.status(500).json({
-            success:false,
-            message:"Internal server error"
-        })
+        console.log(error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
-}
+};
+
 const updateInfrastructure = async (req, res) => {
     try {
-        const {
-            institutionId,
-            infraName,
-            infraDesc,
-            equipment,
-            capacity
-        } = req.body;
-
-
-        // Get existing infrastructure
+        const { institutionId, infraName, infraDesc, equipment, capacity } = req.body;
         const infrastructure = await InfrastructureModel.findById(req.params.id);
-
         if (!infrastructure) {
-            return res.status(404).json({
-                success: false,
-                message: "Infrastructure not found"
-            });
+            return res.status(404).json({ success: false, message: "Infrastructure not found" });
+        }
+        if (req.coordinator && String(infrastructure.institutionId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success: false, message: "Forbidden" });
         }
 
-
         let infraImage = infrastructure.infraImage;
-
-
         if (req.file) {
-
-            // Delete old image
             if (infrastructure.infraImage) {
-
-                const oldImagePath = path.join(
-                    process.cwd(),
-                    "public/uploads",
-                    infrastructure.infraImage
-                );
-
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
-                }
+                const oldImagePath = path.join(process.cwd(), "public/uploads", infrastructure.infraImage);
+                if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
             }
-
-
             infraImage = req.file.filename;
         }
 
-
-        let equipmentArray = undefined;
-
+        let equipmentArray;
         if (equipment) {
             try {
-                equipmentArray =
-                    typeof equipment === "string"
-                        ? JSON.parse(equipment)
-                        : equipment;
-
-                if (!Array.isArray(equipmentArray)) {
-                    equipmentArray = [equipment];
-                }
-
-            } catch (e) {
+                equipmentArray = typeof equipment === "string" ? JSON.parse(equipment) : equipment;
+                if (!Array.isArray(equipmentArray)) equipmentArray = [equipmentArray];
+            } catch {
                 equipmentArray = [equipment];
             }
         }
 
-
         if (!institutionId || !infraName || !infraDesc) {
-            return res.status(400).json({
-                success: false,
-                message: "All fields are required"
-            });
+            return res.status(400).json({ success: false, message: "All fields are required" });
         }
 
-
-        const updateData = {
-            institutionId,
-            infraName,
-            infraDesc,
-            infraImage
-        };
-
-
+        const updateData = { institutionId, infraName, infraDesc, infraImage };
         const unsetData = {};
+        if (capacity !== undefined && capacity !== "") updateData.capacity = Number(capacity);
+        else unsetData.capacity = "";
+        if (equipmentArray !== undefined) updateData.equipment = equipmentArray;
 
+        const updateOperation = { $set: updateData };
+        if (Object.keys(unsetData).length > 0) updateOperation.$unset = unsetData;
 
-        if (capacity !== undefined && capacity !== "") {
-            updateData.capacity = Number(capacity);
-        } else {
-            unsetData.capacity = "";
-        }
-
-
-        if (equipmentArray !== undefined) {
-            updateData.equipment = equipmentArray;
-        }
-
-
-        const updateOperation = {
-            $set: updateData
-        };
-
-
-        if (Object.keys(unsetData).length > 0) {
-            updateOperation.$unset = unsetData;
-        }
-
-
-        const updatedInfrastructure =
-            await InfrastructureModel.findByIdAndUpdate(
-                req.params.id,
-                updateOperation,
-                { new: true }
-            );
-
-
-        res.status(200).json({
-            success: true,
-            data: updatedInfrastructure
-        });
-
-
+        const updatedInfrastructure = await InfrastructureModel.findByIdAndUpdate(req.params.id, updateOperation, { new: true });
+        res.status(200).json({ success: true, data: updatedInfrastructure });
     } catch (error) {
         console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        });
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 
 const deleteInfrastructure = async (req, res) => {
     try {
-
-        const infrastructure =
-            await InfrastructureModel.findById(req.params.id);
-
-
+        const infrastructure = await InfrastructureModel.findById(req.params.id);
         if (!infrastructure) {
-            return res.status(404).json({
-                success: false,
-                message: "Infrastructure not found"
-            });
+            return res.status(404).json({ success: false, message: "Infrastructure not found" });
+        }
+        if (req.coordinator && String(infrastructure.institutionId) !== String(req.coordinator.instituteId)) {
+            return res.status(403).json({ success: false, message: "Forbidden" });
         }
 
-
-        // Delete image from public/uploads
         if (infrastructure.infraImage) {
-
-            const imagePath = path.join(
-                process.cwd(),
-                "public/uploads",
-                infrastructure.infraImage
-            );
-
-
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-            }
+            const imagePath = path.join(process.cwd(), "public/uploads", infrastructure.infraImage);
+            if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
         }
 
-
-        // Delete database record
         await InfrastructureModel.findByIdAndDelete(req.params.id);
-
-
-        res.status(200).json({
-            success: true,
-            message: "Infrastructure deleted successfully"
-        });
-
-
+        res.status(200).json({ success: true, message: "Infrastructure deleted successfully" });
     } catch (error) {
-
         console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        });
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 
-module.exports = {
-    getInfrastructure,
-    createInfrastructure,
-    updateInfrastructure,
-    deleteInfrastructure
-}
+module.exports = { getInfrastructure, createInfrastructure, updateInfrastructure, deleteInfrastructure };

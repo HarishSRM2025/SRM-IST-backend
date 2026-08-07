@@ -1,4 +1,6 @@
-const SchoolDivisionAchievements = require("../../models/schoolDivision/achievements")
+const SchoolDivisionAchievements = require("../../models/schoolDivision/achievements");
+const SchoolDivision = require("../../models/schoolDivision/schoolsDivision");
+const School = require("../../models/schools/schools");
 
 exports.createAchievement = async (req, res) => {
     try {
@@ -26,7 +28,20 @@ exports.createAchievement = async (req, res) => {
 
 exports.getAllAchievements = async (req, res) => {
     try {
-        const list = await SchoolDivisionAchievements.find().populate("schoolDivisionId");
+        let filter = {};
+        if (req.coordinator) {
+            if (req.coordinator.mappingLevel === 'division') {
+                filter = { schoolDivisionId: req.coordinator.divisionId };
+            } else if (req.coordinator.mappingLevel === 'school') {
+                const divisionIds = await SchoolDivision.find({ schoolId: req.coordinator.schoolId }).distinct('_id');
+                filter = { schoolDivisionId: { $in: divisionIds } };
+            } else if (req.coordinator.mappingLevel === 'institute') {
+                const schoolIds = await School.find({ institutionId: req.coordinator.instituteId }).distinct('_id');
+                const divisionIds = await SchoolDivision.find({ schoolId: { $in: schoolIds } }).distinct('_id');
+                filter = { schoolDivisionId: { $in: divisionIds } };
+            }
+        }
+        const list = await SchoolDivisionAchievements.find(filter).populate("schoolDivisionId");
         res.status(200).json(list);
     } catch (error) {
         console.error(error);
