@@ -3,11 +3,21 @@ const School = require('../models/schools/schools');
 const SchoolDivision = require('../models/schoolDivision/schoolsDivision');
 const { auditRequest } = require('../utils/audit');
 
-async function resolveCoordinator(req) {
+async function resolveUser(req) {
   const userId = req.headers['x-user-id'];
   if (!userId) return null;
-  const user = await User.findById(userId);
-  if (!user || user.role !== 'coordinator' || user.status === 'inactive') return null;
+  try {
+    const user = await User.findById(userId);
+    if (!user || user.status === 'inactive') return null;
+    return user;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveCoordinator(req) {
+  const user = await resolveUser(req);
+  if (!user || user.role !== 'coordinator') return null;
   return user;
 }
 
@@ -44,22 +54,30 @@ function coordinatorHeaders(req, user) {
 }
 
 async function requireCoordinatorScope(req, res, next) {
-  const user = await resolveCoordinator(req);
-  if (!user) return next();
-  req.coordinator = user;
-  req.coordinatorScope = coordinatorHeaders(req, user);
-  const finishAudit = auditRequest(req, res);
-  res.on('finish', finishAudit);
+  const user = await resolveUser(req);
+  if (user) {
+    req.currentUser = user;
+    if (user.role === 'coordinator') {
+      req.coordinator = user;
+      req.coordinatorScope = coordinatorHeaders(req, user);
+    }
+    const finishAudit = auditRequest(req, res);
+    res.on('finish', finishAudit);
+  }
   next();
 }
 
 async function restrictByCoordinatorList(req, res, next) {
-  const user = await resolveCoordinator(req);
-  if (!user) return next();
-  req.coordinator = user;
-  req.coordinatorScope = coordinatorHeaders(req, user);
-  const finishAudit = auditRequest(req, res);
-  res.on('finish', finishAudit);
+  const user = await resolveUser(req);
+  if (user) {
+    req.currentUser = user;
+    if (user.role === 'coordinator') {
+      req.coordinator = user;
+      req.coordinatorScope = coordinatorHeaders(req, user);
+    }
+    const finishAudit = auditRequest(req, res);
+    res.on('finish', finishAudit);
+  }
   next();
 }
 
@@ -85,6 +103,7 @@ module.exports = {
   requireCoordinatorScope,
   restrictByCoordinatorList,
   resolveCoordinator,
+  resolveUser,
   assertBodyScope,
   canAccessSchool,
   canAccessDivision,

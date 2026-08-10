@@ -1,7 +1,9 @@
 const express = require('express')
-// xcsdfsdf
 // Database Connection
 const connectDataBase = require('./config/connectDB')
+
+// Middleware Imports
+const { requireCoordinatorScope } = require('./middleware/coordinatorScope')
 
 // Route Imports
 const institutionRoutes = require('./route/institution')
@@ -28,6 +30,8 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 app.use('/public', express.static(path.join(__dirname, 'public')))
 
+// Global User Resolution & Audit Trail Logging Middleware
+app.use(requireCoordinatorScope);
 
 app.use('/api/institution', institutionRoutes)
 app.use('/api/schools', schoolRoutes)
@@ -50,8 +54,6 @@ app.use((err, req, res, next) => {
     }
     next();
 });
-
-
 
 app.listen(4000,'0.0.0.0', () => {
     console.log("loading on" + " http://localhost:4000")
