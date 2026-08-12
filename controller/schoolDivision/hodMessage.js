@@ -1,6 +1,7 @@
 const SchoolDivisionHodMessage = require("../../models/schoolDivision/hodMessage");
 const SchoolDivision = require("../../models/schoolDivision/schoolsDivision");
 const School = require("../../models/schools/schools");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 
 exports.addHODMessage = async (req, res) => {
     try {
@@ -95,10 +96,12 @@ exports.updateHODMessage = async (req, res) => {
 
 exports.deleteHODMessage = async (req, res) => {
     try {
+        const existing = await SchoolDivisionHodMessage.findById(req.params.id);
         const hodMessage = await SchoolDivisionHodMessage.findByIdAndDelete(req.params.id)
         if (!hodMessage) {
             return res.status(404).json({ message: "HOD Message not found" })
         }
+        deleteUploadedFiles(existing?.hodImage);
         res.status(200).json({ message: "HOD Message deleted successfully" })
     } catch (error) {
         console.log(error)

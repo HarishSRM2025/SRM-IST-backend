@@ -1,6 +1,5 @@
 const InfrastructureModel = require("../../models/institution/infrastructure");
-const fs = require("fs");
-const path = require("path");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 
 const getInfrastructure = async (req, res) => {
     try {
@@ -108,10 +107,7 @@ const deleteInfrastructure = async (req, res) => {
             return res.status(403).json({ success: false, message: "Forbidden" });
         }
 
-        if (infrastructure.infraImage) {
-            const imagePath = path.join(process.cwd(), "public/uploads", infrastructure.infraImage);
-            if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
-        }
+        deleteUploadedFiles(infrastructure.infraImage);
 
         await InfrastructureModel.findByIdAndDelete(req.params.id);
         res.status(200).json({ success: true, message: "Infrastructure deleted successfully" });

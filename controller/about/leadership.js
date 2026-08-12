@@ -1,7 +1,5 @@
-const fs = require("fs");
-const path = require("path");
-
 const Leadership = require("../../models/about/leadership")
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 
 exports.createLeadership = async (req, res) => {
     try {
@@ -152,20 +150,7 @@ exports.deleteLeadership = async (req, res) => {
         }
 
 
-        // Delete image from storage
-        if (leadership.image) {
-
-            const imagePath = path.join(
-                process.cwd(),
-                "public/uploads",
-                leadership.image
-            );
-
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-            }
-        }
-
+        deleteUploadedFiles(leadership.image);
 
         // Delete database record
         await Leadership.findByIdAndDelete(req.params.id);

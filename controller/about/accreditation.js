@@ -1,6 +1,5 @@
 const Accreditation = require("../../models/about/accreditation")
-const fs = require("fs");
-const path = require("path");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 exports.createAccreditation = async (req, res) => {
     try {
         const { title, description } = req.body;
@@ -129,20 +128,7 @@ exports.deleteAccreditation = async (req, res) => {
         }
 
 
-        // Delete image from public/uploads
-        if (accreditation.image) {
-
-            const imagePath = path.join(
-                process.cwd(),
-                "public/uploads",
-                accreditation.image
-            );
-
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-            }
-        }
-
+        deleteUploadedFiles(accreditation.image);
 
         // Delete database record
         await Accreditation.findByIdAndDelete(req.params.id);

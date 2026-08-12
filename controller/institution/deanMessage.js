@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const DeanMessageModel = require("../../models/institution/deanMessage")
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles")
 const imagePath = path.join(
     process.cwd(),
     "public/uploads"
@@ -170,17 +171,7 @@ const deleteDeanMessage = async (req, res) => {
             });
         }
 
-        // Delete image from storage
-        if (deanMessage.deanImage) {
-            const filePath = path.join(
-                imagePath,
-                deanMessage.deanImage
-            );
-
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-        }
+        deleteUploadedFiles(deanMessage.deanImage);
 
         // Delete database record
         await DeanMessageModel.findByIdAndDelete(req.params.id);

@@ -1,5 +1,6 @@
 const Achievements = require("../../models/schools/achievements")
 const School = require("../../models/schools/schools")
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 
 exports.createAchievement = async (req, res) => {
     try {
@@ -108,6 +109,7 @@ exports.updateAchievement = async (req, res) => {
 
 exports.deleteAchievement = async (req, res) => {
     try {
+        const achievement = await Achievements.findById(req.params.id);
         const deletedAchievement = await Achievements.findByIdAndDelete(req.params.id);
         if (req.coordinator && req.coordinator.mappingLevel !== 'institute' && String(deletedAchievement?.school?._id || deletedAchievement?.school) !== String(req.coordinator.schoolId)) {
             return res.status(403).json({ message: "Forbidden" });
@@ -115,6 +117,7 @@ exports.deleteAchievement = async (req, res) => {
         if (!deletedAchievement) {
             return res.status(404).json({ message: "Achievement not found" });
         }
+        deleteUploadedFiles(achievement.achievementImage);
         res.status(200).json({ message: "Achievement deleted successfully" });
     } catch (error) {
         console.error(error);

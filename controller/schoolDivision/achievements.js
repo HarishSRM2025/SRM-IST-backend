@@ -1,6 +1,7 @@
 const SchoolDivisionAchievements = require("../../models/schoolDivision/achievements");
 const SchoolDivision = require("../../models/schoolDivision/schoolsDivision");
 const School = require("../../models/schools/schools");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 
 exports.createAchievement = async (req, res) => {
     try {
@@ -94,7 +95,9 @@ exports.updateAchievement = async (req, res) => {
 exports.deleteAchievement = async (req, res) => {
     try {
         const {id} = req.params;
+        const achievement = await SchoolDivisionAchievements.findById(id);
         await SchoolDivisionAchievements.findByIdAndDelete(id);
+        deleteUploadedFiles(achievement?.achievementImage);
         res.status(200).json({message: "Achievement deleted successfully"});
     } catch (error) {
         console.error(error);

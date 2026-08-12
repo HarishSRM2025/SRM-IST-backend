@@ -1,6 +1,5 @@
 const InstitutionEventsAndActivities = require("../../models/institution/eventsAndActivities")
-const fs = require("fs");
-const path = require("path");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles")
 const toBoolean = (value) => value === true || value === "true" || value === "on" || value === "1";
 
 exports.createEventsAndActivities = async (req, res) => {
@@ -216,25 +215,7 @@ exports.deleteEventsAndActivitiesById = async (req, res) => {
         }
 
 
-        // Delete all images
-        if (event.eventImage && event.eventImage.length > 0) {
-
-            event.eventImage.forEach((image) => {
-
-                const imagePath = path.join(
-                    process.cwd(),
-                    "public/uploads",
-                    image
-                );
-
-                if (fs.existsSync(imagePath)) {
-                    fs.unlinkSync(imagePath);
-                }
-
-            });
-
-        }
-
+        deleteUploadedFiles(event.eventImage);
 
         // Delete database record
         await InstitutionEventsAndActivities.findByIdAndDelete(id);
