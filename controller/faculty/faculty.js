@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs");
 const Faculty = require("../../models/faculty/faculty");
 const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 const School = require("../../models/schools/schools");
