@@ -1,10 +1,7 @@
 const SchoolDivisionEventsAndActivities = require("../../models/schoolDivision/eventsAndActivities");
 const SchoolDivision = require("../../models/schoolDivision/schoolsDivision");
 const School = require("../../models/schools/schools");
-const fs = require("fs");
-const path = require("path");
-
-const uploadPath = path.join(process.cwd(), "public/uploads");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 const toBoolean = (value) => value === true || value === "true" || value === "on" || value === "1";
 
 exports.createEventsAndActivities = async (req, res) => {
@@ -221,24 +218,7 @@ exports.deleteEventsAndActivitiesById = async (req, res) => {
         }
 
 
-        // Delete all images
-        if (event.eventImage && event.eventImage.length > 0) {
-
-            event.eventImage.forEach((image) => {
-
-                const imagePath = path.join(
-                    uploadPath,
-                    image
-                );
-
-
-                if (fs.existsSync(imagePath)) {
-                    fs.unlinkSync(imagePath);
-                }
-
-            });
-        }
-
+        deleteUploadedFiles(event.eventImage);
 
         // Delete database record
         await SchoolDivisionEventsAndActivities.findByIdAndDelete(id);

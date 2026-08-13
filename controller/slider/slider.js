@@ -1,6 +1,5 @@
 const Slider = require("../../models/slider/slider");
-const fs = require("fs");
-const path = require("path");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 // Create a new slider
 exports.createSlider = async (req, res) => {
     try {
@@ -137,20 +136,7 @@ exports.deleteSlider = async (req, res) => {
         }
 
 
-        // Delete image from storage
-        if (slider.image) {
-
-            const imagePath = path.join(
-                process.cwd(),
-                "public/uploads",
-                path.basename(slider.image)
-            );
-
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-            }
-        }
-
+        deleteUploadedFiles(slider.image);
 
         // Delete database record
         await Slider.findByIdAndDelete(req.params.id);

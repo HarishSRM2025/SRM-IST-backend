@@ -1,6 +1,5 @@
-const fs = require("fs");
-const path = require("path");
 const Faculty = require("../../models/faculty/faculty");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 const School = require("../../models/schools/schools");
 const SchoolDivision = require("../../models/schoolDivision/schoolsDivision");
 
@@ -216,20 +215,7 @@ exports.deleteFaculty = async (req, res) => {
             return res.status(404).json({ message: "Faculty not found" });
         }
 
-        // Delete profile image
-        if (faculty.facultyImage) {
-            const cleanRel = faculty.facultyImage.replace(/\\/g, '/');
-            const oldRel = cleanRel.startsWith('public/')
-                ? cleanRel
-                : cleanRel.startsWith('uploads/')
-                    ? `public/${cleanRel}`
-                    : `public/uploads/${cleanRel}`;
-            const imagePath = path.join(__dirname, "../../", oldRel);
-
-            if (fs.existsSync(imagePath)) {
-                try { fs.unlinkSync(imagePath); } catch (e) {}
-            }
-        }
+        deleteUploadedFiles(faculty.facultyImage);
 
         await Faculty.findByIdAndDelete(req.params.id);
 

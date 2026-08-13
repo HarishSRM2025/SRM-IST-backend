@@ -1,4 +1,5 @@
 const GalleryAndResource = require("../../models/institution/galleryAndResource");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 
 exports.createGalleryAndResource = async (req, res) => {
     try {
@@ -83,10 +84,12 @@ exports.updateGalleryAndResource = async (req, res) => {
 
 exports.deleteGalleryAndResource = async (req, res) => {
     try {
+        const record = await GalleryAndResource.findById(req.params.id);
         const deletedRecord = await GalleryAndResource.findByIdAndDelete(req.params.id);
         if (!deletedRecord) {
             return res.status(404).json({ message: "Gallery and Resource not found" });
         }
+        deleteUploadedFiles(record.galleryImage, record.pdfFile);
         res.status(200).json({ message: "Gallery and Resource deleted successfully" });
     } catch (error) {
         console.error(error);

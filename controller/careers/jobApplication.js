@@ -1,4 +1,5 @@
 const JobApplication = require('../../models/careers/jobApplication')
+const deleteUploadedFiles = require('../../utils/deleteUploadedFiles')
 
 exports.addJobApplication = async (req, res) => {
     try {
@@ -43,7 +44,14 @@ exports.getJobApplicationById = async (req, res) => {
 exports.deleteJobApplication = async (req, res) => {
     try {
         const { id } = req.params;
-        const jobApplication = await JobApplication.findByIdAndDelete(id);
+        const jobApplication = await JobApplication.findById(id);
+        if (!jobApplication) {
+            return res.status(404).json({ message: "Job application not found" });
+        }
+
+        deleteUploadedFiles(jobApplication.resume);
+        await JobApplication.findByIdAndDelete(id);
+
         res.status(200).json({ message: "Job application deleted successfully", jobApplication });
     } catch (error) {
         res.status(500).json({ message: error.message });

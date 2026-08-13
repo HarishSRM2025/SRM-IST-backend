@@ -1,7 +1,6 @@
 const HODMessage = require("../../models/schools/hodMessage");
 const School = require("../../models/schools/schools");
-const fs = require("fs");
-const path = require("path");
+const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
 
 exports.addHODMessage = async (req, res) => {
     try {
@@ -123,12 +122,7 @@ exports.deleteHODMessage = async (req, res) => {
             return res.status(404).json({ message: "HOD Message not found" });
         }
 
-        if (hodMessage.hodImage) {
-            const imagePath = path.join(process.cwd(), "public/uploads", hodMessage.hodImage);
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-            }
-        }
+        deleteUploadedFiles(hodMessage.hodImage);
 
         await HODMessage.findByIdAndDelete(req.params.id);
 
