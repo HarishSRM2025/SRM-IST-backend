@@ -44,6 +44,8 @@ app.use('/api/student', studentRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/careers', careersRoutes)
 
+
+
 // Global Error Handler (e.g., for Multer file type or size limits)
 app.use((err, req, res, next) => {
     if (err instanceof require('multer').MulterError) {
