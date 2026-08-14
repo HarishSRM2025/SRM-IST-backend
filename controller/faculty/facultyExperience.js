@@ -39,15 +39,33 @@ async function canAccessFaculty(req, facultyId) {
     return Boolean(faculty);
 }
 
+const normalizeList = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value.map(item => typeof item === 'string' ? item.trim() : item).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+        return value
+            .split(/\r?\n/)
+            .map(line => line.replace(/^[\s•*\-–—\d.)]+/, '').trim())
+            .filter(Boolean);
+    }
+    return [];
+};
+
 const addFacultyExperience = async (req, res) => {
     try {
-        const { facultyId, industryExperience } = req.body;
+        const { facultyId, workExperience, industryExperience } = req.body;
         if (!(await canAccessFaculty(req, facultyId))) {
             return res.status(403).json({ message: "Forbidden" });
         }
+
+        const expList = normalizeList(workExperience !== undefined ? workExperience : industryExperience);
+
         const newExperience = new facultyExperience({
             facultyId,
-            industryExperience
+            workExperience: expList,
+            industryExperience: expList
         });
         await newExperience.save();
         res.status(201).json(newExperience);
@@ -74,7 +92,7 @@ const getFacultyExperience = async (req, res) => {
 const updateFacultyExperience = async (req, res) => {
     try {
         const { id } = req.params;
-        const { facultyId, industryExperience } = req.body;
+        const { facultyId, workExperience, industryExperience } = req.body;
         if (!(await canAccessFaculty(req, facultyId))) {
             return res.status(403).json({ message: "Forbidden" });
         }
@@ -82,10 +100,19 @@ const updateFacultyExperience = async (req, res) => {
         if (req.coordinator && !(await canAccessFaculty(req, existing?.facultyId))) {
             return res.status(403).json({ message: "Forbidden" });
         }
-        const updatedExperience = await facultyExperience.findByIdAndUpdate(id, { facultyId, industryExperience }, { new: true });
+
+        const expList = normalizeList(workExperience !== undefined ? workExperience : industryExperience);
+
+        const updatedExperience = await facultyExperience.findByIdAndUpdate(id, {
+            facultyId,
+            workExperience: expList,
+            industryExperience: expList
+        }, { new: true });
+
         if (!updatedExperience) {
             return res.status(404).json({ message: "Faculty experience not found" });
-        }       res.status(200).json(updatedExperience);
+        }
+        res.status(200).json(updatedExperience);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }   

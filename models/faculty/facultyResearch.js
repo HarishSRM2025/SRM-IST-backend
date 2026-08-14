@@ -6,53 +6,33 @@ const facultyResearchSchema = new mongoose.Schema({
         ref: "Faculty",
         required: true
     },
-    // researchArea: String,
-
     awards_and_achievements: [{
-        awardName: String,
-        awardDate: Date,
-        awardBy: String,
-        awardLocation: String,
+        type: mongoose.Schema.Types.Mixed
     }],
     publications: [{
-        title: String,
-        journal: String,
-        year: Number,
-        coAuthors: String
+        type: mongoose.Schema.Types.Mixed
     }],
-    patents: [{
-        patentName: String,
-        patentNumber: String,
-        country: String,
-        year: Number,
-        status: String
-    }],
-    grants: [{
-        grantTitle: String,
-        fundingAgency: String,
-        amount: Number,
-        year: Number,
-        status: String
-    }],
-    conferences: [{
-        conferenceName: String,
-        conferenceLocation: String,
-        conferenceDate: Date,
-        paperPresented: String
-    }],
-    workshop:[{
-        workshopName: String,
-        workshopLocation: String,
-        workshopDate: Date,
+    invited_lectures: [{
+        type: mongoose.Schema.Types.Mixed
     }],
     fundedProject: [{
-        projectName: String,
-        fundingAgency: String,
-        amount: Number,
-        year: Number,
-        status: String
+        type: mongoose.Schema.Types.Mixed
+    }],
+    professional_memberships: [{
+        type: mongoose.Schema.Types.Mixed
+    }],
+    patents: [{
+        type: mongoose.Schema.Types.Mixed
+    }],
+    grants: [{
+        type: mongoose.Schema.Types.Mixed
+    }],
+    conferences: [{
+        type: mongoose.Schema.Types.Mixed
+    }],
+    workshop: [{
+        type: mongoose.Schema.Types.Mixed
     }]
-    
-}, {timestamps:true})
+}, { timestamps: true });
 
-module.exports = mongoose.model("FacultyResearch", facultyResearchSchema);
+module.exports = mongoose.model("FacultyResearch", facultyResearchSchema);

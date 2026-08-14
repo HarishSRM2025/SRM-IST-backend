@@ -4,13 +4,14 @@ const facultyExperienceSchema = new mongoose.Schema({
     facultyId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Faculty",
-        required: true},
+        required: true
+    },
+    workExperience: [{
+        type: mongoose.Schema.Types.Mixed
+    }],
     industryExperience: [{
-        companyName: String,
-        role: String,
-        startDate: Date,
-        endDate: Date,
+        type: mongoose.Schema.Types.Mixed
     }]
 }, { timestamps: true });
 
-module.exports = mongoose.model("FacultyExperience", facultyExperienceSchema);
+module.exports = mongoose.model("FacultyExperience", facultyExperienceSchema);
