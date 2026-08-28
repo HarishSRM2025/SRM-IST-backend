@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const HODMessage = require("../../models/schools/hodMessage");
 const School = require("../../models/schools/schools");
 const deleteUploadedFiles = require("../../utils/deleteUploadedFiles");
