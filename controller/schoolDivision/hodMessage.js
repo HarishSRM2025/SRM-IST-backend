@@ -67,6 +67,13 @@ exports.getHODMessageById = async (req, res) => {
 exports.updateHODMessage = async (req, res) => {
     try {
         const { schoolDivisionId, hodName, hodDesignation, message } = req.body;
+
+        const existing = await SchoolDivisionHodMessage.findById(req.params.id);
+
+        if (!existing) {
+            return res.status(404).json({ message: "HOD Message not found" });
+        }
+
         const updateData = {
             schoolDivisionId,
             hodName,
@@ -74,25 +81,37 @@ exports.updateHODMessage = async (req, res) => {
             message
         };
 
+        const oldImage = existing.hodImage;
+
         if (req.file) {
-            updateData.hodImage = req.file.filename || req.file.path.split(/[/\\]/).pop();
-        } else if (req.body.hodImage) {
-            updateData.hodImage = req.body.hodImage.split(/[/\\]/).pop();
+            updateData.hodImage = req.file.filename;
         }
 
-        const hodMessageEntry = await SchoolDivisionHodMessage.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
+        const hodMessageEntry = await SchoolDivisionHodMessage.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
 
-        if (!hodMessageEntry) {
-            return res.status(404).json({ message: "HOD Message not found" });
+        if (
+            req.file &&
+            oldImage &&
+            oldImage !== updateData.hodImage
+        ) {
+            setTimeout(() => {
+                deleteUploadedFiles(oldImage);
+            }, 1000);
         }
 
         res.status(200).json(hodMessageEntry);
     } catch (error) {
         console.error(error);
         const statusCode = error.name === "ValidationError" ? 400 : 500;
-        res.status(statusCode).json({ message: error.message || "Error updating HOD Message" });
+        res.status(statusCode).json({
+            message: error.message || "Error updating HOD Message"
+        });
     }
-}
+};
 
 exports.deleteHODMessage = async (req, res) => {
     try {

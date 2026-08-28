@@ -88,14 +88,16 @@ exports.updateHODMessage = async (req, res) => {
         };
 
         if (req.file) {
+            console.log("Old image:", existingHODMessage.hodImage);
+            console.log("New image:", req.file.filename);
+
             if (existingHODMessage.hodImage) {
-                const oldImagePath = path.join(process.cwd(), "public/uploads", existingHODMessage.hodImage);
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
-                }
+                deleteUploadedFiles(existingHODMessage.hodImage);
             }
-            updateData.hodImage = req.file.filename || req.file.path.split(/[/\\]/).pop();
-        } else if (req.body.hodImage) {
+
+            updateData.hodImage = req.file.filename;
+        }   
+        else if (req.body.hodImage) {
             updateData.hodImage = req.body.hodImage.split(/[/\\]/).pop();
         }
 
