@@ -1,15 +1,16 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 const deleteUploadedFiles = (...values) => {
     const uploadRoot = path.resolve(process.cwd(), "public", "uploads");
 
     values.forEach((value) => {
-        const filePath = path.join(uploadRoot, value);
+        if (!value) return;
 
-        console.log("Upload Root:", uploadRoot);
+        const fileName = path.basename(value);
+        const filePath = path.join(uploadRoot, fileName);
+
         console.log("Trying to delete:", filePath);
-        console.log("Exists:", fs.existsSync(filePath));
 
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
@@ -17,4 +18,5 @@ const deleteUploadedFiles = (...values) => {
         }
     });
 };
+
 module.exports = deleteUploadedFiles;
