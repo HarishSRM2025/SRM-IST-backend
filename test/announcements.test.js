@@ -244,3 +244,30 @@ test('admin division dropdown lists divisions without coordinator restrictions',
     assert.equal(result.body.length, 2);
   });
 });
+
+test('Both announcements are included in marquee and category links without duplicate records', async () => {
+  const categoryId = id();
+  const row = { _id: id(), title: 'Both displays', announcement_category_id: categoryId, announcement_type: 'both', source_type: 'announcement', url: '/apply' };
+  mock.method(Announcement, 'find', () => ({ sort: () => ({ lean: async () => [row] }) }));
+  mock.method(Category, 'find', () => ({ sort: () => ({ lean: async () => [{ _id: categoryId, name: 'Admissions' }] }) }));
+  await api(null, async request => {
+    const result = await request('/public');
+    assert.equal(result.body.marquee[0]._id, String(row._id));
+    assert.equal(result.body.announcements[0]._id, String(row._id));
+  });
+});
+
+test('Both requires a category and persists through manual announcement create', async () => {
+  const owner = id(), categoryId = id();
+  mock.method(Institution, 'find', () => ({ select: async () => [{ _id: owner }] }));
+  mock.method(Category, 'exists', async () => ({ _id: categoryId }));
+  mock.method(Announcement, 'create', async body => { const row = new Announcement(body); await row.validate(); return row; });
+  await api({ role: 'admin' }, async request => {
+    const body = { title: 'Both displays', school_or_institution_id: String(owner), announcement_type: 'both', url: '/apply', publish_date: '2026-09-15' };
+    assert.equal((await request('/?module=institution', 'POST', body)).status, 400);
+    const result = await request('/?module=institution', 'POST', { ...body, announcement_category_id: String(categoryId) });
+    assert.equal(result.status, 201);
+    assert.equal(result.body.announcement_type, 'both');
+    assert.equal(result.body.announcement_category_id, String(categoryId));
+  });
+});

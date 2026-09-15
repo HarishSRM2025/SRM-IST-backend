@@ -7,6 +7,7 @@ const schema = new mongoose.Schema({
   announcement_category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'AnnouncementCategory', default: null },
   url: { type: String, required: true, trim: true, validate: { validator: validUrl, message: 'Enter an HTTP(S) URL or a local path starting with /.' } },
   source_type: { type: String, enum: ['announcement', 'event'], default: 'announcement' },
+  announcement_type: { type: String, enum: ['marquee', 'category', 'both'] },
   event_id: { type: mongoose.Schema.Types.ObjectId, default: null },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   publish_date: { type: Date, default: null },

@@ -18,7 +18,7 @@ router.get('/public', wrap(async (req, res) => {
   const rows = await Announcement.find(publicFilter()).sort({ created_at: -1, _id: -1 }).lean();
   const categories = await Category.find({ status: 'active', _id: { $in: rows.map(a => a.announcement_category_id).filter(Boolean) } }).sort({ name: 1 }).lean();
   const visible = new Set(categories.map(c => String(c._id)));
-  res.json({ marquee: rows.filter(a => a.source_type === 'event' || !a.announcement_category_id).slice(0, 3), categories,
+  res.json({ marquee: rows.filter(a => a.source_type === 'event' || !a.announcement_category_id || a.announcement_type === 'both').slice(0, 3), categories,
     announcements: rows.filter(a => a.announcement_category_id && visible.has(String(a.announcement_category_id))) });
 }));
 router.use((req, res, next) => {
@@ -61,15 +61,16 @@ router.get('/', wrap(async (req, res) => res.json(await Announcement.find((await
 async function payload(req, owners, module) {
   const body = req.body;
   if (!owners.some(o => String(o._id) === body.school_or_institution_id)) throw fail('Select a School Type within your module and access scope.', 403);
-  if (body.announcement_type && !['marquee', 'category'].includes(body.announcement_type)) throw fail('Select a valid announcement type.');
+  if (body.announcement_type && !['marquee', 'category', 'both'].includes(body.announcement_type)) throw fail('Select a valid announcement type.');
   const categoryId = body.announcement_type === 'marquee' ? null : body.announcement_category_id || null;
-  if (body.announcement_type === 'category' && !categoryId) throw fail('Select an announcement category.');
+  if (['category', 'both'].includes(body.announcement_type) && !categoryId) throw fail('Select an announcement category.');
   if (categoryId && (!mongoose.isValidObjectId(categoryId) || !await Category.exists({ _id: categoryId }))) throw fail('Category not found.');
   const publish = body.publish_date ? new Date(body.publish_date) : null;
   const expiry = body.expiry_date ? new Date(body.expiry_date) : null;
   if (!publish || !Number.isFinite(+publish)) throw fail('Provide a valid publish date.');
   if (expiry && (!Number.isFinite(+expiry) || expiry < publish)) throw fail('Expiry must be a valid date on or after publish.');
   return { title: body.title, module, school_or_institution_id: body.school_or_institution_id,
+    announcement_type: body.announcement_type || (categoryId ? 'category' : 'marquee'),
     announcement_category_id: categoryId, url: body.url, status: body.status,
     publish_date: publish, expiry_date: expiry, source_type: 'announcement', event_id: null };
 }
