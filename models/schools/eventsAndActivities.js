@@ -52,4 +52,6 @@ const eventsAndActivitiesSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+eventsAndActivitiesSchema.plugin(require('../../utils/eventAnnouncement').eventAnnouncementPlugin, { module: 'schools', ownerField: 'school' });
+
 module.exports = mongoose.model('EventsAndActivities', eventsAndActivitiesSchema);

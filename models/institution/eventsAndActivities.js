@@ -52,4 +52,6 @@ const InstitutionEventsAndActivitiesSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+InstitutionEventsAndActivitiesSchema.plugin(require('../../utils/eventAnnouncement').eventAnnouncementPlugin, { module: 'institution', ownerField: 'institutionId' });
+
 module.exports = mongoose.model('InstitutionEventsAndActivities', InstitutionEventsAndActivitiesSchema);

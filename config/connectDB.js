@@ -16,15 +16,16 @@ const connectDataBase = () => {
 
     if (!dbUrl) {
         console.error('DB_URL is not defined. Add it to backend/.env or the repo root .env')
-        return
+        return Promise.reject(new Error('DB_URL is not defined'))
     }
 
-    mongoose.connect(dbUrl, { serverSelectionTimeoutMS: 10000 })
+    return mongoose.connect(dbUrl, { serverSelectionTimeoutMS: 10000 })
         .then(() => {
             console.log('Database Connected')
         })
         .catch((err) => {
             console.error('Error connecting to database:', err)
+            throw err
         })
 }
 

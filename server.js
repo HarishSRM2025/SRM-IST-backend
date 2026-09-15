@@ -23,7 +23,6 @@ const cors = require('cors')
 const bodyParser = require('body-parser')
 const path = require('path')
 
-connectDataBase();
 app.use(cors())
 app.use(express.json())
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -43,6 +42,7 @@ app.use('/api/about', aboutRoutes)
 app.use('/api/student', studentRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/careers', careersRoutes)
+app.use('/api/announcements', require('./route/announcements'))
 
 
 
@@ -57,6 +57,13 @@ app.use((err, req, res, next) => {
     next();
 });
 
-app.listen(4000,'0.0.0.0', () => {
-    console.log("loading on" + " http://localhost:4000")
-})
+connectDataBase()
+    .then(() => require('./utils/eventAnnouncement').backfillEventAnnouncements())
+    .then(() => app.listen(4000, '0.0.0.0', () => {
+        console.log('loading on http://localhost:4000')
+    }))
+    .catch((error) => {
+        console.error('Backend initialization failed:', error.message)
+        process.exitCode = 1
+        require('mongoose').disconnect()
+    })

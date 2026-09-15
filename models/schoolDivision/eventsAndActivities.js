@@ -52,4 +52,6 @@ const SchoolDivisionEventsAndActivitiesSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+SchoolDivisionEventsAndActivitiesSchema.plugin(require('../../utils/eventAnnouncement').eventAnnouncementPlugin, { module: 'school-division', ownerField: 'schoolDivisionId' });
+
 module.exports = mongoose.model('SchoolDivisionEventsAndActivities', SchoolDivisionEventsAndActivitiesSchema);

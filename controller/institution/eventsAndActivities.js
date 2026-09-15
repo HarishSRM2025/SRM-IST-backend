@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const InstitutionEventsAndActivities = require("../../models/institution/eventsAndActivities")
 const deleteUploadedFiles = require("../../utils/deleteUploadedFiles")
 const toBoolean = (value) => value === true || value === "true" || value === "on" || value === "1";
